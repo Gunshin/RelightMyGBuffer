@@ -1,0 +1,14 @@
+/external
+
+/demo/*
+!/demo/readme.txt
+!/demo/global_light_fs.glsl
+!/demo/global_light_vs.glsl
+
+RelightMyGbuffer.sdf
+
+RelightMyGbuffer/Debug
+
+RelightMyGbuffer.opensdf
+
+RelightMyGbuffer.v12.suo
