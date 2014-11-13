@@ -1,4 +1,4 @@
-#version 330
+#version 430
 
 uniform sampler2DRect sampler_world_position;
 uniform sampler2DRect sampler_world_normal;
@@ -10,10 +10,11 @@ out vec3 reflected_light;
 
 void main(void)
 {
-    ivec2 pixelCoord = ivec2(int(gl_FragCoord.x), int(gl_FragCoord.y));
+    ivec2 pixelCoord = ivec2(gl_FragCoord.xy);
     vec3 position = texelFetch(sampler_world_position, pixelCoord).xyz;
     vec3 normal = texelFetch(sampler_world_normal, pixelCoord).xyz;
 
-    //reflected_light = vec3(1.0, 0.33, 0.0);
-    reflected_light = normal;
+    vec3 L = normalize(-light_direction);
+
+    reflected_light = vec3(1) * max(dot(L, normal), 0) * light_intensity;
 }

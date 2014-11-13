@@ -2,8 +2,7 @@
 
 /demo/*
 !/demo/readme.txt
-!/demo/global_light_fs.glsl
-!/demo/global_light_vs.glsl
+!/demo/*.glsl
 
 RelightMyGbuffer.sdf
 

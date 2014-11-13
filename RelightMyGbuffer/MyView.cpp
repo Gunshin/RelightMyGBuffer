@@ -146,6 +146,59 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         }
     }
 
+    // point light shader
+    {
+        GLint compile_status = 0;
+
+        GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+        std::string vertex_shader_string
+            = tygra::stringFromFile("point_light_vs.glsl");
+        const char *vertex_shader_code = vertex_shader_string.c_str();
+        glShaderSource(vertex_shader, 1,
+            (const GLchar **)&vertex_shader_code, NULL);
+        glCompileShader(vertex_shader);
+        glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &compile_status);
+        if (compile_status != GL_TRUE) {
+            const int string_length = 1024;
+            GLchar log[string_length] = "";
+            glGetShaderInfoLog(vertex_shader, string_length, NULL, log);
+            std::cerr << log << std::endl;
+        }
+
+        GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+        std::string fragment_shader_string =
+            tygra::stringFromFile("point_light_fs.glsl");
+        const char *fragment_shader_code = fragment_shader_string.c_str();
+        glShaderSource(fragment_shader, 1,
+            (const GLchar **)&fragment_shader_code, NULL);
+        glCompileShader(fragment_shader);
+        glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &compile_status);
+        if (compile_status != GL_TRUE) {
+            const int string_length = 1024;
+            GLchar log[string_length] = "";
+            glGetShaderInfoLog(fragment_shader, string_length, NULL, log);
+            std::cerr << log << std::endl;
+        }
+
+        point_light_prog_ = glCreateProgram();
+        glAttachShader(point_light_prog_, vertex_shader);
+        glBindAttribLocation(point_light_prog_, 0, "vertex_position");
+        glDeleteShader(vertex_shader);
+        glAttachShader(point_light_prog_, fragment_shader);
+        glBindFragDataLocation(point_light_prog_, 0, "reflected_light");
+        glDeleteShader(fragment_shader);
+        glLinkProgram(point_light_prog_);
+
+        GLint link_status = 0;
+        glGetProgramiv(point_light_prog_, GL_LINK_STATUS, &link_status);
+        if (link_status != GL_TRUE) {
+            const int string_length = 1024;
+            GLchar log[string_length] = "";
+            glGetProgramInfoLog(point_light_prog_, string_length, NULL, log);
+            std::cerr << log << std::endl;
+        }
+    }
+
     /*
      * Tutorial: All of the framebuffers, renderbuffers and texture objects
      *           that you'll need for this tutorial are gen'd here but not
@@ -320,25 +373,76 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
     glClearColor(0.0f, 0.0f, 0.25f, 0.0f); //tyrone blue?
     glClear(GL_COLOR_BUFFER_BIT); //do not clear the depth buffer
 
-    glUseProgram(global_light_prog_);
+    {
+        glUseProgram(global_light_prog_);
 
+        glDisable(GL_DEPTH_TEST); // disable depth test snce we are drawing a full screen quad
+        glDisable(GL_BLEND);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex_);
-    glUniform1i(glGetUniformLocation(global_light_prog_, "sampler_world_position"), 0);
-    
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex_);
-    glUniform1i(glGetUniformLocation(global_light_prog_, "sampler_world_normal"), 1);
+        glEnable(GL_STENCIL_TEST);
+        glStencilFunc(GL_NOTEQUAL, 0, ~0);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
-    glEnable(GL_STENCIL_TEST);
-    glStencilFunc(GL_NOTEQUAL, 0, ~0);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex_);
+        glUniform1i(glGetUniformLocation(global_light_prog_, "sampler_world_position"), 0);
 
-    glBindVertexArray(light_quad_mesh_.vao);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex_);
+        glUniform1i(glGetUniformLocation(global_light_prog_, "sampler_world_normal"), 1);
 
-    glDisable(GL_STENCIL_TEST);
+        glUniform3fv(glGetUniformLocation(global_light_prog_, "light_direction"), 1, glm::value_ptr(global_light_direction));
+
+        // draw directional light
+        glBindVertexArray(light_quad_mesh_.vao);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    }
+
+    {
+        glUseProgram(point_light_prog_);
+
+        glEnable(GL_BLEND);
+        glBlendEquation(GL_FUNC_ADD);
+        glBlendFunc(GL_ONE, GL_ONE);
+
+        glEnable(GL_DEPTH_TEST);// enable the depth test for use with lights
+        glDepthMask(GL_FALSE);// disable depth writes since we dont want the lights to mess with the depth buffer
+        glDepthFunc(GL_GREATER);// set the depth test to check for in front of the back fragments so that we can light correctly
+
+        glEnable(GL_CULL_FACE); // enable the culling (not on by default)
+        glCullFace(GL_FRONT); // set to cull forward facing fragments
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_position_tex_);
+        glUniform1i(glGetUniformLocation(point_light_prog_, "sampler_world_position"), 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex_);
+        glUniform1i(glGetUniformLocation(point_light_prog_, "sampler_world_normal"), 1);
+
+        glBindVertexArray(light_sphere_mesh_.vao);
+
+        // draw shaders
+        for (int i = 0; i < point_light_count; ++i)
+        {
+            glm::mat4 modelXForm = projection_xform * view_xform * glm::translate(glm::mat4(), point_light_position[i]) * glm::scale(glm::mat4(), glm::vec3(point_light_range[i]));
+            glUniformMatrix4fv(glGetUniformLocation(point_light_prog_, "model_xform"), 1, GL_FALSE, glm::value_ptr(modelXForm));
+
+            glUniform3fv(glGetUniformLocation(point_light_prog_, "light_position"), 1, glm::value_ptr(point_light_position[i]));
+            glUniform1f(glGetUniformLocation(point_light_prog_, "light_range"), point_light_range[i]);
+
+            glDrawElements(GL_TRIANGLES, light_sphere_mesh_.element_count, GL_UNSIGNED_INT, 0);
+        }
+
+        glDisable(GL_STENCIL_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LEQUAL);
+
+        glDisable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        //glEnable(GL_DEPTH_TEST);
+    }
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, lbuffer_fbo_);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -346,7 +450,6 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); // unbind the framebuffers
 
-    
 
     /*
      * Tutorial: Add your drawing code here as directed in the worksheet.
