@@ -6,14 +6,14 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 
-MyView::
-MyView() : gbuffer_position_tex_(0),
-           gbuffer_normal_tex_(0),
-           gbuffer_depth_tex_(0),
-           lbuffer_fbo_(0),
-           lbuffer_colour_rbo_(0),
-           global_light_prog_(0),
-           point_light_prog_(0)
+MyView::MyView() : 
+gbuffer_position_tex_(0),
+gbuffer_normal_tex_(0),
+gbuffer_depth_tex_(0),
+lbuffer_fbo_(0),
+lbuffer_colour_rbo_(0),
+global_light_prog_(0),
+point_light_prog_(0)
 {
 }
 
@@ -38,9 +38,9 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         glGenBuffers(1, &light_quad_mesh_.vertex_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, light_quad_mesh_.vertex_vbo);
         glBufferData(GL_ARRAY_BUFFER,
-                     vertices.size() * sizeof(glm::vec2),
-                     vertices.data(),
-                     GL_STATIC_DRAW);
+            vertices.size() * sizeof(glm::vec2),
+            vertices.data(),
+            GL_STATIC_DRAW);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         glGenVertexArrays(1, &light_quad_mesh_.vao);
@@ -48,7 +48,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         glBindBuffer(GL_ARRAY_BUFFER, light_quad_mesh_.vertex_vbo);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE,
-                              sizeof(glm::vec2), 0);
+            sizeof(glm::vec2), 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }
@@ -58,38 +58,38 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
      *           with a point light source.
      */
     {
-        tsl::IndexedMesh mesh;
-        tsl::CreateSphere(1.f, 12, &mesh);
-        tsl::ConvertPolygonsToTriangles(&mesh);
+    tsl::IndexedMesh mesh;
+    tsl::CreateSphere(1.f, 12, &mesh);
+    tsl::ConvertPolygonsToTriangles(&mesh);
 
-        light_sphere_mesh_.element_count = mesh.index_array.size();
+    light_sphere_mesh_.element_count = mesh.index_array.size();
 
-        glGenBuffers(1, &light_sphere_mesh_.vertex_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, light_sphere_mesh_.vertex_vbo);
-        glBufferData(GL_ARRAY_BUFFER,
-                     mesh.vertex_array.size() * sizeof(glm::vec3),
-                     mesh.vertex_array.data(),
-                     GL_STATIC_DRAW);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glGenBuffers(1, &light_sphere_mesh_.vertex_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, light_sphere_mesh_.vertex_vbo);
+    glBufferData(GL_ARRAY_BUFFER,
+        mesh.vertex_array.size() * sizeof(glm::vec3),
+        mesh.vertex_array.data(),
+        GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glGenBuffers(1, &light_sphere_mesh_.element_vbo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_sphere_mesh_.element_vbo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                     mesh.index_array.size() * sizeof(unsigned int),
-                     mesh.index_array.data(),
-                     GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glGenBuffers(1, &light_sphere_mesh_.element_vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_sphere_mesh_.element_vbo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+        mesh.index_array.size() * sizeof(unsigned int),
+        mesh.index_array.data(),
+        GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-        glGenVertexArrays(1, &light_sphere_mesh_.vao);
-        glBindVertexArray(light_sphere_mesh_.vao);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_sphere_mesh_.element_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, light_sphere_mesh_.vertex_vbo);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-                              sizeof(glm::vec3), 0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-    }
+    glGenVertexArrays(1, &light_sphere_mesh_.vao);
+    glBindVertexArray(light_sphere_mesh_.vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, light_sphere_mesh_.element_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, light_sphere_mesh_.vertex_vbo);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+        sizeof(glm::vec3), 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
 
     /*
      * Tutorial: this code creates a shader program for the global lighting
@@ -98,7 +98,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         GLint compile_status = 0;
 
         GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        std::string vertex_shader_string 
+        std::string vertex_shader_string
             = tygra::stringFromFile("global_light_vs.glsl");
         const char *vertex_shader_code = vertex_shader_string.c_str();
         glShaderSource(vertex_shader, 1,
@@ -113,7 +113,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         }
 
         GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        std::string fragment_shader_string = 
+        std::string fragment_shader_string =
             tygra::stringFromFile("global_light_fs.glsl");
         const char *fragment_shader_code = fragment_shader_string.c_str();
         glShaderSource(fragment_shader, 1,
@@ -126,7 +126,7 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
             glGetShaderInfoLog(fragment_shader, string_length, NULL, log);
             std::cerr << log << std::endl;
         }
-        
+
         global_light_prog_ = glCreateProgram();
         glAttachShader(global_light_prog_, vertex_shader);
         glBindAttribLocation(global_light_prog_, 0, "vertex_position");
@@ -144,6 +144,23 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
             glGetProgramInfoLog(global_light_prog_, string_length, NULL, log);
             std::cerr << log << std::endl;
         }
+
+        // setup buffer
+
+        CreateBuffer(global_light_prog_, bufferGlobalLights, 0, "Lights", sizeof(glm::vec3) + sizeof(float) + (0 * sizeof(DirectionalLight)));
+
+        directionalLights.resize(3);
+        directionalLights[0].light_direction = glm::vec3(-3.f, -2.f, 1.f); // original directional light
+        directionalLights[0].light_intensity = 0.15f; // original intensity shown in shader
+
+        directionalLights[1].light_direction = glm::vec3(1.f, 1.f, 0.f);
+        directionalLights[1].light_intensity = 0.2f;
+
+        directionalLights[2].light_direction = glm::vec3(4.f, 0.f, 10.f);
+        directionalLights[2].light_intensity = 0.05f;
+
+        SetBuffer(glm::vec3(0.05f, 0.f, 0.f), directionalLights); // tyrone red as ambient?
+        
     }
 
     // point light shader
@@ -225,8 +242,8 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
 
 void MyView::
 windowViewDidReset(std::shared_ptr<tygra::Window> window,
-                   int width,
-                   int height)
+int width,
+int height)
 {
     /*
      * Tutorial: Load the gbuffer data from file.  Not normally done
@@ -351,13 +368,13 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
     const glm::vec3 camera_position = glm::vec3(96.f, 22.f, -8.f);
     const glm::vec3 camera_direction = glm::vec3(-0.98f, 0.18f, 0.11f);
     glm::mat4 projection_xform = glm::perspective(75.f,
-                                                  aspect_ratio,
-                                                  1.f, 1000.f);
+        aspect_ratio,
+        1.f, 1000.f);
     glm::mat4 view_xform = glm::lookAt(camera_position,
-                                       camera_position + camera_direction,
-                                       glm::vec3(0, 1, 0));
-    const glm::vec3 global_light_direction
-        = glm::normalize(glm::vec3(-3.f, -2.f, 1.f));
+        camera_position + camera_direction,
+        glm::vec3(0, 1, 0));
+    /*const glm::vec3 global_light_direction
+        = glm::normalize(glm::vec3(-3.f, -2.f, 1.f));*/ // added to the directional light list
     const unsigned int point_light_count = 3;
     const glm::vec3 point_light_position[3] =
     {
@@ -391,7 +408,7 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
         glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex_);
         glUniform1i(glGetUniformLocation(global_light_prog_, "sampler_world_normal"), 1);
 
-        glUniform3fv(glGetUniformLocation(global_light_prog_, "light_direction"), 1, glm::value_ptr(global_light_direction));
+        //glUniform3fv(glGetUniformLocation(global_light_prog_, "light_direction"), 1, glm::value_ptr(global_light_direction));
 
         // draw directional light
         glBindVertexArray(light_quad_mesh_.vao);
@@ -456,4 +473,42 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
      */
 
 
+}
+
+void MyView::CreateBuffer(GLuint shaderProgram_, GLuint &bufferID_, unsigned int bufferChannel_, std::string shaderBufferName_, unsigned int bufferSize_)
+{
+    glGenBuffers(1, &bufferID_);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferID_);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize_, NULL, GL_STATIC_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, bufferChannel_, bufferID_);
+    glShaderStorageBlockBinding(
+        shaderProgram_,
+        glGetUniformBlockIndex(shaderProgram_, shaderBufferName_.c_str()),
+        bufferChannel_);
+}
+
+void MyView::SetBuffer(glm::vec3 ambient_, std::vector<DirectionalLight> lights_)
+{
+    
+
+    // so since glMapBufferRange does not work, i am going to create a temporary buffer for the per model data, and then copy the full buffer straight into the shaders buffer
+    unsigned int bufferSize = sizeof(glm::vec3) + sizeof(float)+(lights_.size() * sizeof(DirectionalLight));
+    char* buffer = new char[bufferSize];
+    unsigned int index = 0;
+
+    //ambient first!
+    memcpy(buffer + index, glm::value_ptr(ambient_), sizeof(ambient_));
+    index += sizeof(ambient_) + sizeof(float);
+
+    // finally the LIGHTS!
+    memcpy(buffer + index, lights_.data(), (lights_.size() * sizeof(DirectionalLight)));
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferGlobalLights);
+    unsigned int size = sizeof(glm::vec3) + sizeof(float)+(lights_.size() * sizeof(DirectionalLight)); // our buffer consists of an ambient, some packing, and directional lights
+    glBufferData(GL_SHADER_STORAGE_BUFFER, size, buffer, GL_STATIC_DRAW);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+    delete[] buffer;
 }

@@ -3,6 +3,8 @@
 #include <tygra/WindowViewDelegate.hpp>
 #include <tgl/tgl.h>
 #include <glm/glm.hpp>
+#include <string>
+#include <vector>
 
 class MyView : public tygra::WindowViewDelegate
 {
@@ -53,6 +55,18 @@ private:
 
     GLuint lbuffer_fbo_;
     GLuint lbuffer_colour_rbo_;
+
+    struct DirectionalLight
+    {
+        glm::vec3 light_direction;
+        float light_intensity;
+    };
+
+    std::vector<DirectionalLight> directionalLights;
+    GLuint bufferGlobalLights;
+
+    void CreateBuffer(GLuint shaderProgram_, GLuint &bufferID_, unsigned int bufferChannel_, std::string shaderBufferName_, unsigned int bufferSize_);
+    void SetBuffer(glm::vec3 ambient_, std::vector<DirectionalLight> lights_);
 
     /*
      * Tutorial: All of the resources you'll need are already defined.
