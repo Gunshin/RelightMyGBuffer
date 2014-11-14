@@ -216,6 +216,59 @@ windowViewWillStart(std::shared_ptr<tygra::Window> window)
         }
     }
 
+    // background shaders
+    {
+        GLint compile_status = 0;
+
+        GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+        std::string vertex_shader_string
+            = tygra::stringFromFile("background_vs.glsl");
+        const char *vertex_shader_code = vertex_shader_string.c_str();
+        glShaderSource(vertex_shader, 1,
+            (const GLchar **)&vertex_shader_code, NULL);
+        glCompileShader(vertex_shader);
+        glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &compile_status);
+        if (compile_status != GL_TRUE) {
+            const int string_length = 1024;
+            GLchar log[string_length] = "";
+            glGetShaderInfoLog(vertex_shader, string_length, NULL, log);
+            std::cerr << log << std::endl;
+        }
+
+        GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+        std::string fragment_shader_string =
+            tygra::stringFromFile("background_fs.glsl");
+        const char *fragment_shader_code = fragment_shader_string.c_str();
+        glShaderSource(fragment_shader, 1,
+            (const GLchar **)&fragment_shader_code, NULL);
+        glCompileShader(fragment_shader);
+        glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &compile_status);
+        if (compile_status != GL_TRUE) {
+            const int string_length = 1024;
+            GLchar log[string_length] = "";
+            glGetShaderInfoLog(fragment_shader, string_length, NULL, log);
+            std::cerr << log << std::endl;
+        }
+
+        background_prog_ = glCreateProgram();
+        glAttachShader(background_prog_, vertex_shader);
+        glBindAttribLocation(background_prog_, 0, "vertex_position");
+        glDeleteShader(vertex_shader);
+        glAttachShader(background_prog_, fragment_shader);
+        glBindFragDataLocation(background_prog_, 0, "reflected_light");
+        glDeleteShader(fragment_shader);
+        glLinkProgram(background_prog_);
+
+        GLint link_status = 0;
+        glGetProgramiv(background_prog_, GL_LINK_STATUS, &link_status);
+        if (link_status != GL_TRUE) {
+            const int string_length = 1024;
+            GLchar log[string_length] = "";
+            glGetProgramInfoLog(background_prog_, string_length, NULL, log);
+            std::cerr << log << std::endl;
+        }
+    }
+
     /*
      * Tutorial: All of the framebuffers, renderbuffers and texture objects
      *           that you'll need for this tutorial are gen'd here but not
@@ -387,9 +440,31 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
     glBindFramebuffer(GL_FRAMEBUFFER, lbuffer_fbo_); // bind the offscreen framebuffer
 
     //clear offscreen render buffer
-    glClearColor(0.0f, 0.0f, 0.25f, 0.0f); //tyrone blue?
-    glClear(GL_COLOR_BUFFER_BIT); //do not clear the depth buffer
+    //glClearColor(0.0f, 0.0f, 0.25f, 0.0f); //tyrone blue?
+    //glClear(GL_COLOR_BUFFER_BIT); //do not clear the depth buffer
 
+    //clear the via shader instead of glClear by drawing fullscreen quad in regards to bassing shader over background
+    {
+
+        glUseProgram(background_prog_);
+
+        glDisable(GL_DEPTH_TEST); // disable depth test snce we are drawing a full screen quad
+        glDisable(GL_BLEND);
+
+        glEnable(GL_STENCIL_TEST);
+        glStencilFunc(GL_EQUAL, 0, ~0); // only check for background eg. 0
+        glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+        varying_time += 0.05;
+        glUniform1f(glGetUniformLocation(background_prog_, "varying_time"), varying_time);
+
+        // draw directional light
+        glBindVertexArray(light_quad_mesh_.vao);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+    }
+
+    // draw fullscreen quad in regards to passing shader over sponza geometry
     {
         glUseProgram(global_light_prog_);
 
@@ -407,8 +482,6 @@ windowViewRender(std::shared_ptr<tygra::Window> window)
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_RECTANGLE, gbuffer_normal_tex_);
         glUniform1i(glGetUniformLocation(global_light_prog_, "sampler_world_normal"), 1);
-
-        //glUniform3fv(glGetUniformLocation(global_light_prog_, "light_direction"), 1, glm::value_ptr(global_light_direction));
 
         // draw directional light
         glBindVertexArray(light_quad_mesh_.vao);

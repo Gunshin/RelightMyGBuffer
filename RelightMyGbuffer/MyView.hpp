@@ -32,6 +32,7 @@ private:
 
     GLuint global_light_prog_;
 	GLuint point_light_prog_;
+    GLuint background_prog_;
 
     struct Mesh
     {
@@ -64,6 +65,8 @@ private:
 
     std::vector<DirectionalLight> directionalLights;
     GLuint bufferGlobalLights;
+
+    float varying_time = 0; // not sure where to grab time from, so just incrementing a number in render
 
     void CreateBuffer(GLuint shaderProgram_, GLuint &bufferID_, unsigned int bufferChannel_, std::string shaderBufferName_, unsigned int bufferSize_);
     void SetBuffer(glm::vec3 ambient_, std::vector<DirectionalLight> lights_);

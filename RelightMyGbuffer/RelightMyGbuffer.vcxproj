@@ -115,6 +115,8 @@
     <ClInclude Include="MyView.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\demo\background_fs.glsl" />
+    <None Include="..\demo\background_vs.glsl" />
     <None Include="..\demo\global_light_fs.glsl" />
     <None Include="..\demo\global_light_vs.glsl" />
     <None Include="..\demo\point_light_fs.glsl" />
